@@ -5,17 +5,18 @@
 namespace app::net {
 class EpollHandler {
 private:
-  static const int c_max_events = 10;
-  static const int c_wait_time_in_milliseconds = 50;
+  static const int kMaxEvents = 10;
+  static const int kWaitTimeInMilliseconds = 50;
+
 public:
   EpollHandler() = default;
   ~EpollHandler() = default;
 
   bool Init();
-  void AddToList(int);
-  std::array<int, c_max_events> GetSocketEvents();
+  void AddToList(int) const;
+  std::array<int, kMaxEvents> GetSocketEvents() const;
 
 private:
-  int m_epoll_fd{-1};
+  int epoll_fd_{-1};
 };
 } // namespace app::net

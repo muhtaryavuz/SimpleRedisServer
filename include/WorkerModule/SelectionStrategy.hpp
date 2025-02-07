@@ -15,8 +15,8 @@ public:
   virtual ~SelectionStrategy() = default;
 
   virtual std::optional<uint16_t> execute() = 0;
-  void publishSize(uint16_t, size_t) override{};
-  void publishWorkerCount(uint16_t) override{};
+  void publishSize(uint16_t, size_t) override {};
+  void publishWorkerCount(uint16_t) override {};
 };
 
 class RoundRobinStrategy : public SelectionStrategy {
@@ -29,8 +29,8 @@ public:
   void publishWorkerCount(uint16_t) override;
 
 private:
-  uint16_t m_current_index{0};
-  uint16_t m_num_of_workers{0};
+  uint16_t current_index_{0};
+  uint16_t num_of_workers_{0};
 };
 
 class LoadBalanceStrategy : public SelectionStrategy {
@@ -44,7 +44,7 @@ public:
   void publishWorkerCount(uint16_t) override;
 
 private:
-  uint16_t m_num_of_workers{0};
-  std::vector<AtomicWrapper<size_t>> m_size_vector;
+  uint16_t num_of_workers_{0};
+  std::vector<AtomicWrapper<size_t>> size_vector_;
 };
 } // namespace worker_utility

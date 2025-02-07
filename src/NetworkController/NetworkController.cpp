@@ -5,13 +5,12 @@
 #include "NetworkController/Definitions.hpp"
 #include "NetworkController/NetworkController.hpp"
 #include "NetworkController/Utils.hpp"
-#include "WorkerModule/Events.hpp"
 
 app::net::NetworkController::~NetworkController() {
   std::cout << "Closing network controller\n";
   Stop();
-  if (m_thread->joinable())
-    m_thread->join();
+  if (thread_->joinable())
+    thread_->join();
 }
 
 bool app::net::NetworkController::Init(
@@ -19,13 +18,12 @@ bool app::net::NetworkController::Init(
   std::string server_ip;
   uint16_t port;
   try {
-    server_ip = std::string(std::getenv(c_server_ip_env.c_str()) != nullptr
-                                ? std::getenv(c_server_ip_env.c_str())
+    server_ip = std::string(std::getenv(kServerIpEnvName) != nullptr
+                                ? std::getenv(kServerIpEnvName)
                                 : "127.0.0.1");
-    auto server_port =
-        std::string(std::getenv(c_server_port_env.c_str()) != nullptr
-                        ? std::getenv(c_server_port_env.c_str())
-                        : "8080");
+    auto server_port = std::string(std::getenv(kServerPortEnvName) != nullptr
+                                       ? std::getenv(kServerPortEnvName)
+                                       : "8080");
 
     if (not app::net::Utils::IsValidIPv4(server_ip)) {
       std::cout << "Couldnt get valid ip\n";
@@ -38,58 +36,58 @@ bool app::net::NetworkController::Init(
     return false;
   }
 
-  m_server_socket = std::make_shared<ServerSocket>();
-  if (m_server_socket->CreateSocket(server_ip, port_t{port}) == InvalidSocketId)
+  server_socket_ = std::make_shared<ServerSocket>();
+  if (server_socket_->CreateSocket(server_ip, port_t{port}) == kInvalidSocketId)
     return false;
 
-  if (not m_epoll_handler.Init())
+  if (not epoll_handler_.Init())
     return false;
-  m_epoll_handler.AddToList(m_server_socket->GetSocketId());
+  epoll_handler_.AddToList(server_socket_->GetSocketId());
 
-  m_workers = workers;
+  workers_ = workers;
   return true;
 }
 
 bool app::net::NetworkController::Start() {
-  m_is_running = true;
+  is_running_ = true;
 
-  m_thread = std::make_unique<std::thread>(
+  thread_ = std::make_unique<std::thread>(
       &app::net::NetworkController::listenServerSocket, this);
   return true;
 }
 
-void app::net::NetworkController::Stop() { m_is_running = false; }
+void app::net::NetworkController::Stop() { is_running_ = false; }
 
 void app::net::NetworkController::listenServerSocket() {
 
-  while (m_is_running) {
-    auto sockets = m_epoll_handler.GetSocketEvents();
+  while (is_running_) {
+    auto sockets = epoll_handler_.GetSocketEvents();
 
-    for (int i = 0; i < sockets.size(); i++) {
-      if (sockets[i] != InvalidSocketId) {
-        if (sockets[i] == m_server_socket->GetSocketId()) {
-          auto new_socket = m_server_socket->Accept();
-          if (new_socket != InvalidSocketId) {
-            m_epoll_handler.AddToList(new_socket);
-            addToConnections(sockets[i]);
+    for (auto socket : sockets) {
+      if (socket != kInvalidSocketId and socket != 0) {
+        std::cout << "socket: " << socket << std::endl;
+        if (socket == server_socket_->GetSocketId()) {
+          auto new_socket = server_socket_->Accept();
+          if (new_socket != kInvalidSocketId) {
+            epoll_handler_.AddToList(new_socket);
+            addToConnections(new_socket);
           }
         } else {
-          auto message = m_connections[sockets[i]]->Read();
-          if (not message.empty()) {
-            auto event = std::make_shared<worker_utility::NetworkEvent>(worker_utility::NetworkEvent
-                {sockets[i], std::move(message)});
-            m_workers->sendToWorkers(worker_utility::worker_variant_t{event});
+          if (not connections_.at(socket)->Read()) {
+            close(socket);
+            connections_.erase(socket);
           }
         }
-      } else
+      } else {
         break;
+      }
     }
   }
 }
 
 void app::net::NetworkController::addToConnections(int socket_id) {
-  auto new_socket = std::make_unique<Socket>(socket_id);
+  auto new_socket = std::make_unique<Socket>(socket_id, workers_);
 
-  std::lock_guard lock(m_conn_mutex);
-  m_connections.emplace(socket_id, std::move(new_socket));
+  std::lock_guard lock(conn_mutex_);
+  connections_.emplace(socket_id, std::move(new_socket));
 }

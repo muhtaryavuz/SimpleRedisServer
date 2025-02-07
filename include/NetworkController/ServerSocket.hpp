@@ -2,6 +2,7 @@
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <string>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -13,13 +14,13 @@ public:
   ServerSocket() = default;
   ~ServerSocket();
 
-  [[nodiscard]] int CreateSocket(std::string, port_t);
+  [[nodiscard]] int CreateSocket(const std::string&, port_t);
   [[nodiscard]] int Accept() const;
-  [[nodiscard]] int GetSocketId() const {return m_id;}
- 
+  [[nodiscard]] int GetSocketId() const { return id_; }
+
 private:
-  struct sockaddr_in m_address;
-  int m_id{InvalidSocketId};
-  int m_options{1};
+  struct sockaddr_in address_;
+  int id_{kInvalidSocketId};
+  int options_{1};
 };
 } // namespace app::net

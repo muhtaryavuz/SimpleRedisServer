@@ -1,0 +1,21 @@
+{
+    "clangd.path": "/home/codespace/.vscode-remote/data/User/globalStorage/llvm-vs-code-extensions.vscode-clangd/install/19.1.2/clangd_19.1.2/bin/clangd",
+    "clangd.arguments": [
+        "-log=verbose",
+        "-pretty",
+        "--background-index",
+        "--compile-commands-dir=${workspaceFolder}/build",
+        "--completion-style=detailed",
+        "--header-insertion=iwyu",
+        "--header-insertion-decorators",
+        "--inlay-hints",
+        "--function-arg-placeholders",
+        "--clang-tidy",
+        "--clang-tidy-checks=cppcoreguidelines-*,performance-*,bugprone-*,portability-*,modernize-*,llvm-*"
+    ],
+    "cmake.configureOnOpen": true,
+    "cmake.generator": "Ninja",
+    "cmake.configureSettings": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": 1
+    }
+}

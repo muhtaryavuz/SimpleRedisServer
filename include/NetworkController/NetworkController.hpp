@@ -2,9 +2,8 @@
 
 #include <memory>
 #include <mutex>
-#include <unordered_map>
-#include <string>
 #include <thread>
+#include <unordered_map>
 
 #include "NetworkController/EpollHandler.hpp"
 #include "NetworkController/ServerSocket.hpp"
@@ -13,11 +12,15 @@
 
 namespace app::net {
 class NetworkController {
+private:
+  static constexpr char kServerIpEnvName[] = "APP_SERVER_IP";
+  static constexpr char kServerPortEnvName[] = "APP_SERVER_PORT";
+
 public:
   NetworkController() = default;
   ~NetworkController();
 
-  bool Init(const std::shared_ptr<worker_utility::WorkerController>&);
+  bool Init(const std::shared_ptr<worker_utility::WorkerController> &);
   bool Start();
   void Stop();
 
@@ -25,17 +28,12 @@ private:
   void listenServerSocket();
   void addToConnections(int);
 
-private:
-  const std::string c_server_ip_env = "APP_SERVER_IP";
-  const std::string c_server_port_env = "APP_SERVER_PORT";
-
-private:
-  std::shared_ptr<worker_utility::WorkerController> m_workers;
-  std::unique_ptr<std::thread> m_thread;
-  std::shared_ptr<ServerSocket> m_server_socket;
-  EpollHandler m_epoll_handler;
-  std::unordered_map<int, std::unique_ptr<Socket>> m_connections;
-  std::mutex m_conn_mutex;
-  bool m_is_running{false};
+  std::shared_ptr<worker_utility::WorkerController> workers_;
+  std::unique_ptr<std::thread> thread_;
+  std::shared_ptr<ServerSocket> server_socket_;
+  EpollHandler epoll_handler_;
+  std::unordered_map<int, std::unique_ptr<Socket>> connections_;
+  std::mutex conn_mutex_;
+  bool is_running_{false};
 };
 } // namespace app::net

@@ -6,14 +6,14 @@
 namespace app {
 class Server {
 public:
-    Server() = default;
-    ~Server();
+  Server() = default;
+  ~Server();
 
-    bool Init();
-    void Run();
+  bool Init();
+  void Run();
 
-    private:
-    app::net::NetworkController m_network_controller;
-    std::shared_ptr<worker_utility::WorkerController> m_workers;
+private:
+  app::net::NetworkController network_controller_;
+  std::shared_ptr<worker_utility::WorkerController> workers_;
 };
 } // namespace app

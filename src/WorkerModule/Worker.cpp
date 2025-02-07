@@ -9,53 +9,53 @@
 
 worker_utility::Worker::Worker(
     int id, std::shared_ptr<worker_utility::Publishable> publisher)
-    : m_id(id), m_publisher(publisher) {}
+    : id_(id), publisher_(publisher) {}
 
 void worker_utility::Worker::init(std::string name) {
-  m_thread = std::make_unique<std::thread>(&Worker::process, this);
-  if (int result = pthread_setname_np(m_thread->native_handle(), name.c_str());
+  thread_ = std::make_unique<std::thread>(&Worker::process, this);
+  if (int result = pthread_setname_np(thread_->native_handle(), name.c_str());
       result != 0)
     throw std::runtime_error("Couldnt set thread name error->" +
                              std::to_string(result));
 }
 
 std::size_t worker_utility::Worker::getQueueSize() {
-  std::scoped_lock<std::mutex> lock(m_mutex);
-  return m_queue.size();
+  std::scoped_lock<std::mutex> lock(mutex_);
+  return queue_.size();
 }
 
-void worker_utility::Worker::insertToQueue(worker_variant_t const &event) {
+void worker_utility::Worker::insertToQueue(worker_variant_t &&event) {
   {
-    std::scoped_lock<std::mutex> lock(m_mutex);
-    m_queue.push(std::move(event));
-    m_publisher->publishSize(m_id, m_queue.size());
+    std::scoped_lock<std::mutex> lock(mutex_);
+    queue_.push(std::move(event));
+    publisher_->publishSize(id_, queue_.size());
   }
-  m_cv.notify_one();
+  cv_.notify_one();
 }
 
 void worker_utility::Worker::stopExecution() {
-  m_is_running = false;
-  m_cv.notify_one();
-  if (m_thread->joinable())
-    m_thread->join();
+  is_running_ = false;
+  cv_.notify_one();
+  if (thread_->joinable())
+    thread_->join();
 }
 
 void worker_utility::Worker::process() {
 
   worker_utility::worker_variant_t event;
-  while (m_is_running) {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    m_cv.wait(lock);
+  while (is_running_) {
+    std::unique_lock<std::mutex> lock(mutex_);
+    cv_.wait(lock);
 
-    if (m_queue.empty())
+    if (queue_.empty())
       continue;
 
-    event = m_queue.front();
-    m_queue.pop();
-    m_publisher->publishSize(m_id, m_queue.size());
+    event = queue_.front();
+    queue_.pop();
+    publisher_->publishSize(id_, queue_.size());
     lock.unlock();
 
     std::visit(service::EventExecutor{}, event);
   }
-  std::cout << "Thread" << m_id << " is terminated" << std::endl;
+  std::cout << "Thread" << id_ << " is terminated" << std::endl;
 }

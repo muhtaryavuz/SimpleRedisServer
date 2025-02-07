@@ -1,45 +1,43 @@
-#include <sys/epoll.h>
-
+#include <cstring>
 #include <iostream>
+#include <sys/epoll.h>
 
 #include "NetworkController/Definitions.hpp"
 #include "NetworkController/EpollHandler.hpp"
 
 bool app::net::EpollHandler::Init() {
 
-  int m_epoll_fd = epoll_create1(0);
-  if (m_epoll_fd == InvalidSocketId) {
+  epoll_fd_ = epoll_create1(0);
+  if (epoll_fd_ == kInvalidSocketId) {
     std::cerr << "Epoll create failed\n";
     return false;
   }
-
   return true;
 }
 
-void app::net::EpollHandler::AddToList(int socket_id) {
-  struct epoll_event ev;
-  ev.events = EPOLLIN;
-  ev.data.fd = socket_id;
-  if (epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, socket_id, &ev) == -1) {
+void app::net::EpollHandler::AddToList(int socket_id) const {
+  struct epoll_event event;
+  event.events = EPOLLIN;
+  event.data.fd = socket_id;
+  if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, socket_id, &event) == -1) {
     std::cerr << "Epoll ctl failed" << std::endl;
   }
 }
 
-std::array<int, app::net::EpollHandler::c_max_events>
-app::net::EpollHandler::GetSocketEvents() {
+std::array<int, app::net::EpollHandler::kMaxEvents>
+app::net::EpollHandler::GetSocketEvents() const {
 
-  std::array<int, app::net::EpollHandler::c_max_events> sockets = {
-      InvalidSocketId};
-  struct epoll_event ev, events[c_max_events];
+  std::array<int, app::net::EpollHandler::kMaxEvents> sockets = {0};
+  struct epoll_event events[kMaxEvents];
 
   int num_of_events =
-      epoll_wait(m_epoll_fd, events, c_max_events, c_wait_time_in_milliseconds);
-  if (num_of_events == -1) {
+      epoll_wait(epoll_fd_, events, kMaxEvents, kWaitTimeInMilliseconds);
+  if (num_of_events != -1) {
     for (int i = 0; i < num_of_events; ++i) {
       sockets[i] = events[i].data.fd;
     }
   } else {
-    std::cerr << "Epoll wait failed\n";
+    std::cerr << "Epoll wait failed: errno: " << strerror(errno) << std::endl;
   }
 
   return sockets;

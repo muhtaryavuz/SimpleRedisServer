@@ -4,13 +4,13 @@
 
 namespace worker_utility {
 class WorkerInitializationError : public std::exception {
-  virtual const char *what() const throw() {
+  const char *what() const noexcept final {
     return "Worker thread initialization is failed";
   }
 };
 
 class WorkerSelectionError : public std::exception {
-  virtual const char *what() const throw() {
+  const char *what() const noexcept final {
     return "Worker thread couldnt be selected";
   }
 };

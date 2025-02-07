@@ -2,26 +2,30 @@
 
 #include <cstddef>
 #include <netinet/in.h>
+#include <string>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <string>
 
 #include "NetworkController/Definitions.hpp"
+#include "WorkerModule/WorkerController.hpp"
 
 namespace app::net {
 class Socket {
+private:
+  static const std::size_t kBufferLength = 1024;
+
 public:
-  explicit Socket(int);
+  explicit Socket(int,
+                  const std::shared_ptr<worker_utility::WorkerController> &);
   ~Socket();
 
-  std::string Read();
-  void Send(std::string);
+  bool Read();
+  void Send(const std::string&) const;
 
 private:
-  static const std::size_t c_buffer_length = 1024;
-
-private:
-  char m_buffer[c_buffer_length] = {0};
-  int m_id{InvalidSocketId};
+  const std::shared_ptr<worker_utility::WorkerController> workers_;
+  char cache_buffer_[kBufferLength] = {0};
+  int head_{0};
+  int id_{kInvalidSocketId};
 };
 } // namespace app::net

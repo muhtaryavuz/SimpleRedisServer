@@ -17,20 +17,19 @@ public:
   ~Worker() = default;
 
   void init(std::string);
-  void insertToQueue(worker_variant_t const &);
+  void insertToQueue(worker_variant_t &&);
   std::size_t getQueueSize();
   void stopExecution();
 
 private:
   void process();
 
-private:
-  std::queue<worker_variant_t> m_queue;
-  std::unique_ptr<std::thread> m_thread;
-  std::shared_ptr<Publishable> m_publisher;
-  std::mutex m_mutex;
-  std::condition_variable m_cv;
-  int m_id{-1};
-  bool m_is_running{true};
+  std::queue<worker_variant_t> queue_;
+  std::unique_ptr<std::thread> thread_;
+  std::shared_ptr<Publishable> publisher_;
+  std::mutex mutex_;
+  std::condition_variable cv_;
+  int id_{-1};
+  bool is_running_{true};
 };
 } // namespace worker_utility

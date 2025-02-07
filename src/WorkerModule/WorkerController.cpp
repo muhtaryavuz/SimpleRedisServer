@@ -7,17 +7,17 @@
 worker_utility::WorkerController::WorkerController(
     uint16_t num_of_workers,
     std::shared_ptr<worker_utility::SelectionStrategy> &&strategy)
-    : m_num_of_workers(num_of_workers), m_thread_selector(std::move(strategy)) {
+    : num_of_workers_(num_of_workers), thread_selector_(std::move(strategy)) {
 
-  if (m_num_of_workers == 0 || not m_thread_selector)
+  if (num_of_workers_ == 0 || not thread_selector_)
     throw worker_utility::WorkerInitializationError();
 
-  m_thread_selector->publishWorkerCount(m_num_of_workers);
+  thread_selector_->publishWorkerCount(num_of_workers_);
 
   try {
-    for (int i = 0; i < m_num_of_workers; i++) {
-      m_workers.emplace_back(std::make_unique<Worker>(i, m_thread_selector));
-      m_workers[i]->init("Worker" + std::to_string(i));
+    for (int i = 0; i < num_of_workers_; i++) {
+      workers_.emplace_back(std::make_unique<Worker>(i, thread_selector_));
+      workers_[i]->init("Worker" + std::to_string(i));
     }
   } catch (std::exception &e) {
     std::cout << e.what() << std::endl;
@@ -26,14 +26,14 @@ worker_utility::WorkerController::WorkerController(
 }
 
 worker_utility::WorkerController::~WorkerController() {
-  std::for_each(m_workers.begin(), m_workers.end(),
+  std::for_each(workers_.begin(), workers_.end(),
                 [](auto &itr) { itr->stopExecution(); });
 }
 
-void worker_utility::WorkerController::sendToWorkers(worker_variant_t event) {
+void worker_utility::WorkerController::sendToWorkers(worker_variant_t&& event) {
 
-  auto index = m_thread_selector->execute();
-  if (not index.has_value() || index.value() >= m_num_of_workers)
+  auto index = thread_selector_->execute();
+  if (not index.has_value() || index.value() >= num_of_workers_)
     throw worker_utility::WorkerSelectionError();
-  m_workers[index.value()]->insertToQueue(event);
+  workers_[index.value()]->insertToQueue(std::move(event));
 }

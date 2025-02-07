@@ -8,7 +8,7 @@ struct AtomicWrapper {
 
   AtomicWrapper() : m_var() {}
 
-  AtomicWrapper(const std::atomic<T>& a) : m_var(a.load()) {}
+  explicit AtomicWrapper(const std::atomic<T>& a) : m_var(a.load()) {}
 
   AtomicWrapper(const AtomicWrapper& other) : m_var(other.m_var.load()) {}
 

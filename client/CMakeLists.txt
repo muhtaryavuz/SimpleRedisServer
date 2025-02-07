@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(RedisServer)
+project(RedisClient)
 
 set(CMAKE_CXX_STANDARD 20)
 
