@@ -62,7 +62,11 @@ void app::Client::Run() {
   if (send(sockfd, (const char *)kStringMessage, sizeof(kStringMessage)/sizeof(kStringMessage[0]), 0) < 0) { 
     perror("Mesaj gönderme hatası"); 
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  if (send(sockfd, (const char *)kStringMessage, sizeof(kStringMessage)/sizeof(kStringMessage[0]), 0) < 0) { 
+    perror("Mesaj gönderme hatası"); 
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
   if (send(sockfd, (const char *)kStringMessage, sizeof(kStringMessage)/sizeof(kStringMessage[0]), 0) < 0) { 
     perror("Mesaj gönderme hatası"); 
   }

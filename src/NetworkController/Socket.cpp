@@ -23,7 +23,7 @@ bool app::net::Socket::Read() {
     if (bytes_read > 0) {
       std::cout << "FROM fd: " << id_ << " -> " << buffer << "\n";
 
-      for (int i = 0; i < bytes_read; i++) {
+      for (int i = 0; i < bytes_read - 1; i++) {
         if (i > 0 and buffer[i] == app::net::kLF and
             buffer[i - 1] == app::net::kCR) {
           cache_buffer_[head_ - 1] = 0;
